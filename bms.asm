@@ -8,6 +8,8 @@ filename BYTE "BLOOD.txt",0
 BUFFER_SIZE = 5000
 buffer BYTE BUFFER_SIZE DUP(?)
 filehandle DWORD ?
+bytesWritten dword 1 dup(0)
+bytesRead dword 1 dup(0)
 str1 BYTE BUFFER_SIZE DUP(?)
 Sspace byte  ".........................................................",0h
 space byte "			-------------------------------------------------------------------",0h
@@ -25,11 +27,17 @@ choi byte ?
  stringN byte "Enter Your name : ",0h
  stringB byte "Enter Blood Type : ",0h
  StringA byte "Enter Amount of blood you want to donate in kg : ",0h 
- arr byte 50 dup(0)
-N byte  5 dup(0)
-B byte 5 dup(0)
-A byte 5 dup(0)
+ arr byte 50 dup(?)
+N byte  5 dup(?)
+B byte 5 dup(?)
+A byte 5 dup(?)
 temp dword 0
+
+; Strings for the print function
+strName byte "Name: ", 0
+strBlood byte "Blood Group: ", 0
+strAmount byte "Amount: ", 0
+currentOption dword 1
 .code
 
 
@@ -54,6 +62,27 @@ main PROC
 	call writestring 
 	call crlf
 	call crlf
+
+	;Read from File
+	INVOKE CreateFile,
+	ADDR filename, ; ptr to filename
+	GENERIC_READ, ; mode = Can read
+	DO_NOT_SHARE, ; share mode
+	NULL, ; ptr to security attributes
+	OPEN_ALWAYS, ; open an existing file
+	FILE_ATTRIBUTE_NORMAL, ; normal file attribute
+	0 ; not used
+
+	mov filehandle, eax ; Copy handle to variable
+
+	invoke ReadFile,
+	filehandle, ; file handle
+	addr arr, ; where to read
+	50, ; num bytes to read
+	addr bytesRead, ; bytes actually read
+	0
+
+	invoke CloseHandle, filehandle
 
 	menucard:
 		call crlf
@@ -92,37 +121,38 @@ main PROC
 		call crlf
 		mov edx,offset stringN
 		call writestring
-		 call crlf
-		 mov edx,offset n
-		 mov ecx,sizeof n
-		 call readstring
+		call crlf
+		mov edx,offset N
+		mov ecx,sizeof N
+		call readstring
 		; call writestring
-		 mov eax,temp
-		 mov esi,eax
-		 mov edx,0
+		mov eax,temp
+		mov esi,eax
+		mov edx,0
  
-		 Nameloop:
-			 mov al,N[edx]
-			 mov arr[esi],al
+		Nameloop:
+			mov al,N[edx]
+			mov arr[esi],al
 
-			 inc edx
-			 inc esi
-		 loop Nameloop
+			inc edx
+			inc esi
+		loop Nameloop
 
-		 add eax,5
-		 mov temp,eax
-		 mov edx,offset stringB
-		 call writestring 
+		mov eax, temp
+		add eax,5
+		mov temp,eax
+		mov edx,offset stringB
+		call writestring 
  
-		 call crlf
-		 mov edx,offset B									; Taking Input for Blood Type
-		 mov ecx,sizeof b
-		 call readstring
-		 ;call writestring
+		call crlf
+		mov edx,offset B									; Taking Input for Blood Type
+		mov ecx,sizeof b
+		call readstring
+		;call writestring
 
-		 mov eax,temp
-		 mov esi,eax
-		 mov edx,0
+		mov eax,temp
+		mov esi,eax
+		mov edx,0
 
 		 Bloodloop:											; Store Blood type
 	 
@@ -134,6 +164,7 @@ main PROC
  
 		 loop Bloodloop
 
+		 mov eax, temp
 		 add eax,5
 		 mov temp,eax
 
@@ -157,6 +188,7 @@ main PROC
 			 inc esi 
 		 loop Amountloop
 
+	mov eax, temp
 	 add eax,5
 	 mov temp,eax
 	 jmp menucard
@@ -165,16 +197,76 @@ main PROC
 
 		mov esi,0
 		mov ecx,50
+		mov ebx, 0
+
 		call crlf
 
 		Print:
+			
+			;Reset value of ebx if its greater than 5
+			print_calc:
+				cmp ebx, 0
+				je print_name
+				cmp ebx, 4
+				je print_blood
+				cmp ebx, 6
+				je print_amount
+				cmp ebx, 8
+				je print_reset
+				jmp print_main
 
-			mov al,arr[esi]
-			mov edx,offset arr
-			call writechar
-			inc esi
+			print_reset:
+				mov ebx, 0
+				jmp print_calc
+
+			;Print Name:
+			print_name:
+				mov edx, offset strName
+				call writestring
+				jmp print_main
+			;Print Blood Group:
+
+			print_blood:
+				mov edx, offset strBlood
+				call writestring
+				jmp print_main
+
+			;Print Amount:
+			print_amount:
+				mov edx, offset strAmount
+				call writestring
+				jmp print_main
+
+			print_main:
+				mov al,arr[esi]
+				mov edx,offset arr
+				call writechar
+				inc esi
+				inc ebx
 
 		loop Print
+
+		INVOKE CreateFile,
+		ADDR filename, ; ptr to filename
+		GENERIC_WRITE, ; mode = Can read
+		DO_NOT_SHARE, ; share mode
+		NULL, ; ptr to security attributes
+		OPEN_ALWAYS, ; open an existing file
+		FILE_ATTRIBUTE_NORMAL, ; normal file attribute
+		0 ; not used
+
+		mov filehandle, eax ; Copy handle to variable
+
+		INVOKE WriteFile,
+		filehandle, ; file handle
+		addr arr, ; msg to write
+		sizeof arr, ; size of bytes to write
+		addr bytesWritten,; num bytes written
+		0
+
+		call writeint
+
+		invoke CloseHandle,filehandle
 
 	 jmp menucard
 
