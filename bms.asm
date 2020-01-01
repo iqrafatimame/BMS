@@ -203,39 +203,8 @@ main PROC
 
 		Print:
 			
-			;Reset value of ebx if its greater than 5
-			print_calc:
-				cmp ebx, 0
-				je print_name
-				cmp ebx, 4
-				je print_blood
-				cmp ebx, 6
-				je print_amount
-				cmp ebx, 8
-				je print_reset
-				jmp print_main
-
-			print_reset:
-				mov ebx, 0
-				jmp print_calc
-
-			;Print Name:
-			print_name:
-				mov edx, offset strName
-				call writestring
-				jmp print_main
-			;Print Blood Group:
-
-			print_blood:
-				mov edx, offset strBlood
-				call writestring
-				jmp print_main
-
-			;Print Amount:
-			print_amount:
-				mov edx, offset strAmount
-				call writestring
-				jmp print_main
+			
+				
 
 			print_main:
 				mov al,arr[esi]
